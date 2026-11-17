@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FastAPI Studio</title>
+  <style>
+    :root {
+      --bg: #f3f5f8;
+      --card: #ffffff;
+      --text: #1f2328;
+      --muted: #656d76;
+      --border: #d0d7de;
+      --btn-bg: #f6f8fa;
+      --btn-hover: #eaeef2;
+      --accent: #0969da;
+      --accent-soft: #ddf4ff;
+    }
+    body.dark {
+      --bg: #0d1117;
+      --card: #161b22;
+      --text: #e6edf3;
+      --muted: #8b949e;
+      --border: #30363d;
+      --btn-bg: #21262d;
+      --btn-hover: #30363d;
+      --accent: #58a6ff;
+      --accent-soft: #1f3554;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 24px;
+      transition: background 0.2s, color 0.2s;
+    }
+    .container { max-width: 1180px; margin: 0 auto; }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .title-wrap { display: flex; align-items: center; gap: 10px; }
+    .title-wrap h2 { margin: 0; font-size: 22px; }
+    .count-pill {
+      background: var(--accent-soft);
+      color: var(--accent);
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .search-box {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      width: 220px;
+      font-size: 13px;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1.1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .sticky-panel { position: sticky; top: 20px; }
+
+    .tag-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      margin: 0 0 12px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+    .grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--bg);
+    }
+    .row:last-child { margin-bottom: 0; }
+
+    button {
+      padding: 8px 13px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--btn-bg);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+      transition: all 0.15s;
+    }
+    button:hover { background: var(--btn-hover); }
+    button.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .m-badge {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      color: #fff;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+    .m-GET { background: #0969da; }
+    .m-POST { background: #1a7f37; }
+
+    input.param-input {
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      width: 130px;
+      font-size: 13px;
+    }
+    textarea.body-input {
+      width: 100%;
+      min-height: 76px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--card);
+      color: var(--text);
+      font-family: monospace;
+      font-size: 12px;
+      resize: vertical;
+    }
+
+    .result-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .url-text { font-family: monospace; font-size: 13px; color: var(--accent); }
+    .badge { padding: 3px 9px; border-radius: 12px; font-size: 12px; font-weight: 700; margin-left: 6px; }
+    .ok { background: #dafbe1; color: #116329; }
+    .err { background: #ffebe9; color: #82071e; }
+    .time { background: var(--btn-bg); color: var(--muted); border: 1px solid var(--border); }
+
+    pre {
+      background: #0f1419;
+      color: #e6edf3;
+      padding: 16px;
+      border-radius: 10px;
+      overflow-x: auto;
+      min-height: 240px;
+      max-height: 460px;
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+    .json-key { color: #79c0ff; }
+    .json-str { color: #a5d6ff; }
+    .json-num { color: #ffa657; }
+    .json-bool { color: #d2a8ff; }
+
+    .history-header { display: flex; justify-content: space-between; align-items: center; margin: 16px 0 8px 0; }
+    .history-title { font-size: 13px; font-weight: 700; color: var(--muted); }
+    .history-box { display: flex; flex-wrap: wrap; gap: 6px; }
+    .history-chip {
+      font-size: 12px;
+      font-family: monospace;
+      padding: 4px 10px;
+      border-radius: 14px;
+      background: var(--btn-bg);
+      border: 1px solid var(--border);
+      cursor: pointer;
+    }
+    .history-chip:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="title-wrap">
+        <h2>⚡ FastAPI Studio</h2>
+        <span id="routeCount" class="count-pill">0개</span>
+      </div>
+      <div class="controls">
+        <input id="searchInput" class="search-box" placeholder="🔍 버튼 이름 또는 주소 검색..." oninput="filterRoutes()" />
+        <button onclick="loadServerRoutes()">🔄 새로고침</button>
+        <button id="themeBtn" onclick="toggleTheme()">🌙 다크 모드</button>
+      </div>
+    </div>
+
+    <div class="layout">
+      <div id="routesContainer">
+        <div class="card">불러오는 중...</div>
+      </div>
+
+      <div class="card sticky-panel">
+        <div class="result-bar">
+          <div>
+            <span id="currentUrl" class="url-text">대기 중</span>
+            <span id="statusBadge" class="badge" style="display:none;"></span>
+            <span id="timeBadge" class="badge time" style="display:none;"></span>
+          </div>
+          <button id="copyBtn" onclick="copyResult()">📋 복사</button>
+        </div>
+
+        <pre id="result">왼쪽에서 버튼을 클릭하면 결과가 여기에 표시됩니다.</pre>
+
+        <div class="history-header">
+          <div class="history-title">최근 실행 기록</div>
+          <button onclick="clearHistory()" style="padding: 3px 8px; font-size: 12px;">🗑️ 지우기</button>
+        </div>
+        <div id="historyBox" class="history-box">
+          <span style="font-size: 12px; color: var(--muted);">아직 기록이 없습니다.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let activeBtn = null;
+    let lastRawText = "";
+    const historyList = [];
+
+    if (localStorage.getItem("theme") === "dark") {
+      document.body.classList.add("dark");
+      document.getElementById("themeBtn").textContent = "☀️ 라이트 모드";
+    }
+
+    function toggleTheme() {
+      const isDark = document.body.classList.toggle("dark");
+      localStorage.setItem("theme", isDark ? "dark" : "light");
+      document.getElementById("themeBtn").textContent = isDark ? "☀️ 라이트 모드" : "🌙 다크 모드";
+    }
+
+    function highlightJson(jsonStr) {
+      const escaped = jsonStr
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+      return escaped.replace(
+        /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+        (match) => {
+          let cls = "json-num";
+          if (/^"/.test(match)) {
+            cls = /:$/.test(match) ? "json-key" : "json-str";
+          } else if (/true|false|null/.test(match)) {
+            cls = "json-bool";
+          }
+          return `<span class="${cls}">${match}</span>`;
+        }
+      );
+    }
+
+    // POST 요청용 샘플 JSON 자동 생성
+    function buildSampleBody(schema, spec) {
+      if (!schema) return "{}";
+      if (schema.$ref && spec?.components?.schemas) {
+        const name = schema.$ref.split("/").pop();
+        schema = spec.components.schemas[name];
+      }
+      if (schema?.type === "object" && schema.properties) {
+        const sample = {};
+        for (const [k, prop] of Object.entries(schema.properties)) {
+          if (prop.default !== undefined) sample[k] = prop.default;
+          else if (prop.type === "integer" || prop.type === "number") sample[k] = 0;
+          else if (prop.type === "boolean") sample[k] = false;
+          else if (prop.type === "array") sample[k] = [];
+          else sample[k] = "";
+        }
+        return JSON.stringify(sample, null, 2);
+      }
+      return "{}";
+    }
+
+    function makeMethodButton(method, label, tooltip) {
+      const btn = document.createElement("button");
+      const badge = document.createElement("span");
+      badge.className = `m-badge m-${method}`;
+      badge.textContent = method;
+      btn.appendChild(badge);
+      btn.appendChild(document.createTextNode(label));
+      btn.title = tooltip;
+      return btn;
+    }
+
+    async function loadServerRoutes() {
+      document.getElementById("searchInput").value = "";
+      clearHistory();
+      const container = document.getElementById("routesContainer");
+
+      try {
+        const res = await fetch("/openapi.json");
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const spec = await res.json();
+
+        const groups = {};
+        let total = 0;
+
+        for (const [path, methods] of Object.entries(spec.paths)) {
+          for (const m of ["get", "post"]) {
+            const op = methods[m];
+            if (!op) continue;
+            const method = m.toUpperCase();
+            const tag = (op.tags && op.tags[0]) || "기본";
+            if (!groups[tag]) groups[tag] = [];
+            groups[tag].push({ path, method, op });
+            total++;
+          }
+        }
+
+        document.getElementById("routeCount").textContent = `${total}개`;
+        container.innerHTML = "";
+
+        for (const [tag, items] of Object.entries(groups)) {
+          const card = document.createElement("div");
+          card.className = "card";
+
+          const title = document.createElement("div");
+          title.className = "tag-title";
+          title.textContent = `📁 ${tag}`;
+          card.appendChild(title);
+
+          const fixedGrid = document.createElement("div");
+          fixedGrid.className = "grid";
+          card.appendChild(fixedGrid);
+
+          for (const { path, method, op } of items) {
+            const params = op.parameters || [];
+            const bodySchema = op.requestBody?.content?.["application/json"]?.schema;
+            const label = op.summary || path;
+            const tooltip = op.description || path;
+            const searchKey = `${method} ${label} ${path}`.toLowerCase();
+
+            if (params.length === 0 && !bodySchema) {
+              const btn = makeMethodButton(method, label, tooltip);
+              btn.className = "route-item";
+              btn.dataset.search = searchKey;
+              btn.onclick = () => callApi(method, path, btn);
+              fixedGrid.appendChild(btn);
+              continue;
+            }
+
+            const row = document.createElement("div");
+            row.className = "row route-item";
+            row.dataset.search = searchKey;
+
+            const btn = makeMethodButton(method, label, tooltip);
+
+            const inputs = params.map((p) => {
+              const input = document.createElement("input");
+              input.className = "param-input";
+              input.placeholder = `${p.name}${p.required ? " (필수)" : ""}`;
+              input.value = p.schema?.default ?? "";
+              if (p.schema?.type === "integer") input.type = "number";
+              input.addEventListener("keydown", (e) => {
+                if (e.key === "Enter") btn.click();
+              });
+              row.appendChild(input);
+              return { param: p, input };
+            });
+
+            row.appendChild(btn);
+
+            let bodyArea = null;
+            if (bodySchema) {
+              bodyArea = document.createElement("textarea");
+              bodyArea.className = "body-input";
+              bodyArea.value = buildSampleBody(bodySchema, spec);
+              row.appendChild(bodyArea);
+            }
+
+            btn.onclick = () => {
+              let url = path;
+              const query = new URLSearchParams();
+
+              for (const { param, input } of inputs) {
+                if (param.in === "path") {
+                  url = url.replace(`{${param.name}}`, encodeURIComponent(input.value));
+                } else if (param.in === "query" && input.value !== "") {
+                  query.set(param.name, input.value);
+                }
+              }
+
+              const qs = query.toString();
+              const finalUrl = qs ? `${url}?${qs}` : url;
+              callApi(method, finalUrl, btn, true, bodyArea ? bodyArea.value : null);
+            };
+
+            card.appendChild(row);
+          }
+
+          if (fixedGrid.children.length === 0) fixedGrid.remove();
+          container.appendChild(card);
+        }
+
+        filterRoutes();
+      } catch (err) {
+        container.innerHTML = `<div class="card">불러오기 실패: ${err.message}</div>`;
+      }
+    }
+
+    async function callApi(method, url, clickedBtn = null, saveHistory = true, bodyText = null) {
+      const statusEl = document.getElementById("statusBadge");
+      const timeEl = document.getElementById("timeBadge");
+      const resultEl = document.getElementById("result");
+
+      if (activeBtn) activeBtn.classList.remove("active");
+      if (clickedBtn) {
+        clickedBtn.classList.add("active");
+        activeBtn = clickedBtn;
+      }
+
+      document.getElementById("currentUrl").textContent = `${method} ${url}`;
+      statusEl.style.display = "none";
+      timeEl.style.display = "none";
+      resultEl.textContent = "요청 중...";
+
+      const options = { method };
+      if (bodyText !== null) {
+        options.headers = { "Content-Type": "application/json" };
+        options.body = bodyText;
+      }
+
+      const start = performance.now();
+      try {
+        const res = await fetch(url, options);
+        const elapsed = Math.round(performance.now() - start);
+        const text = await res.text();
+
+        statusEl.textContent = `${res.status} ${res.statusText}`;
+        statusEl.className = `badge ${res.ok ? "ok" : "err"}`;
+        statusEl.style.display = "inline-block";
+
+        timeEl.textContent = `${elapsed}ms`;
+        timeEl.style.display = "inline-block";
+
+        try {
+          const pretty = JSON.stringify(JSON.parse(text), null, 2);
+          lastRawText = pretty;
+          resultEl.innerHTML = highlightJson(pretty);
+        } catch {
+          lastRawText = text;
+          resultEl.textContent = text;
+        }
+
+        if (saveHistory) addHistory(method, url, bodyText);
+      } catch (err) {
+        lastRawText = "에러: " + err.message;
+        resultEl.textContent = lastRawText;
+      }
+    }
+
+    function addHistory(method, url, bodyText) {
+      historyList.unshift({ method, url, bodyText });
+      if (historyList.length > 5) historyList.pop();
+
+      const box = document.getElementById("historyBox");
+      box.innerHTML = "";
+      historyList.forEach((item) => {
+        const chip = document.createElement("span");
+        chip.className = "history-chip";
+        chip.textContent = `${item.method} ${item.url}`;
+        chip.onclick = () => callApi(item.method, item.url, null, false, item.bodyText);
+        box.appendChild(chip);
+      });
+    }
+
+    function clearHistory() {
+      historyList.length = 0;
+      document.getElementById("historyBox").innerHTML =
+        '<span style="font-size: 12px; color: var(--muted);">아직 기록이 없습니다.</span>';
+    }
+
+    function filterRoutes() {
+      const keyword = document.getElementById("searchInput").value.trim().toLowerCase();
+      document.querySelectorAll(".route-item").forEach((el) => {
+        el.style.display = el.dataset.search.includes(keyword) ? "" : "none";
+      });
+    }
+
+    function copyResult() {
+      if (!lastRawText) return;
+      navigator.clipboard.writeText(lastRawText).then(() => {
+        const btn = document.getElementById("copyBtn");
+        btn.textContent = "✅ 복사됨!";
+        setTimeout(() => (btn.textContent = "📋 복사"), 1200);
+      });
+    }
+
+    loadServerRoutes();
+  </script>
+</body>
+</html>
