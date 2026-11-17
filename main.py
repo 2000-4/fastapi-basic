@@ -92,7 +92,7 @@ def repeat(word : str, count : int = 1):
 
 @app.get("/launch", summary="오늘 점심 메뉴", tags=["음식"])
 def launch():
-    menus = ["김치찌개", "돈까스", "초밥", "제육볶음", "파스타", "국밥"]
+    menus = ["라멘", "김치찌개", "돈까스", "초밥", "제육볶음", "파스타", "국밥"]
     picked = random.choice(menus)
     return {"점심메뉴": picked}
 
@@ -107,4 +107,6 @@ def count(data : dict):
     count = len(data["items"])
     response = {"count" : count}
     return response
+
+
     
